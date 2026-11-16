@@ -128,8 +128,10 @@ async function generate() {
   state.versions = [];
   addVersion({
     text: data.output,
-    action: "First answer",
-    who: "Written by the AI from your text and request",
+    action: data.seeded ? "First answer (demo)" : "First answer",
+    who: data.seeded
+      ? "Seeded demo failure, not written by the model"
+      : "Written by the AI from your text and request",
     parent: null,
     changes: null,
     data,
@@ -398,8 +400,8 @@ function renderCurrent() {
 
   const words = v.text.trim().split(/\s+/).filter(Boolean).length;
   const d = v.data;
-  $("output-meta").textContent =
-    `${words} words · ${d.mock ? "mock" : d.model} · ${d.elapsed_ms} ms`;
+  const source = d.seeded ? "seeded demo answer" : d.mock ? "mock" : d.model;
+  $("output-meta").textContent = `${words} words · ${source} · ${d.elapsed_ms} ms`;
   $("output-meta").hidden = false;
 
   $("sent-system").textContent = d.sent.system;

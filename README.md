@@ -20,11 +20,15 @@ explanation misses the mark.
   highlight a likely button, which the person can use or dismiss; decline
   behaviour when a correction asks for something the source does not contain;
   working indicator; "show what was sent to the model" panel.
-- **Simulated:** mock mode with three seeded bad first answers (too technical,
-  too long, missing the key point), scripted revisions and scripted Auto-fix
-  proposals for the demo paths.
-- **Not yet built:** live prompt test runner (fixed test cases against the
-  real model).
+- **Simulated:** three seeded demo failures (too technical, too long, missing
+  the key point). An unchanged demo case always starts from its scripted bad
+  answer, labelled "Seeded demo failure, not written by the model", in mock and
+  live mode, so recovery can be shown on a known failure; with a key, every
+  later step uses the real model. Mock mode also scripts the demo revisions
+  and Auto-fix proposals.
+- **Prompt tests:** `scripts/prompt_tests.py` runs 8 fixed cases (13
+  code-checkable criteria) against the model and saves results in
+  `docs/prompt-tests/`.
 
 ## Technology stack
 
@@ -60,11 +64,19 @@ Run the tests:
 pytest
 ```
 
+Run the prompt test cases against the live model (needs your key in `.env`):
+
+```bash
+python -m scripts.prompt_tests            # each case once
+python -m scripts.prompt_tests --repeat 3 # repeat to see run-to-run variation
+```
+
 ## Project layout
 
 ```
 app/        FastAPI backend: config, prompt specifications, model clients, mock data
 static/     Web page: index.html, style.css, app.js
-tests/      API and prompt tests (mock mode)
-docs/       Prompt log and development notes
+tests/      Unit and API tests (mock mode)
+scripts/    Prompt test runner (live model)
+docs/       Prompt log, development notes, prompt test results
 ```

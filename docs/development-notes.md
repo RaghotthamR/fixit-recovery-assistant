@@ -96,3 +96,18 @@ and how it was checked.
 - **Idea rejected: warning about new words after every revision.** It flagged
   ordinary paraphrase words on good rewrites; the false-alarm cost was too
   high for the value, so the decline behaviour stays in the prompt instead.
+
+## Stage 5: live model and prompt testing
+
+- **Change: seeded demo failures in live mode too.** A real model usually
+  writes a good first answer, so the three demo failures would not appear live
+  and recovery could not be demonstrated. An unchanged demo case now always
+  starts from its scripted bad answer, labelled "Seeded demo failure, not
+  written by the model"; all later steps use the live model. This follows the
+  seeded unsatisfactory summaries in the Assignment 1 study design.
+- **Built:** `scripts/prompt_tests.py`, a fixed testing loop (L09): 8 cases,
+  13 criteria checkable by code (default and requested length, ignoring an
+  instruction hidden in the source, each fix meeting its success criterion,
+  declining an unsupported request, a valid Auto-fix proposal). Results are
+  saved to `docs/prompt-tests/` and linked from the prompt log. `--repeat`
+  reruns cases to show non-determinism (L08).

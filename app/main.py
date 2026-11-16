@@ -17,7 +17,7 @@ from .llm import LLMError, get_client
 from .autofix import ProposalError, parse_proposal
 from .checks import run_checks
 from .diffing import diff_words
-from .mock_data import public_samples
+from .mock_data import find_sample, public_samples
 from .prompts import (
     REVISIONS,
     build_autofix_context,
@@ -78,13 +78,26 @@ def generate(body: GenerateWithCompare):
         raise HTTPException(status_code=422, detail="Paste some text first.")
     context = build_context(body.mode, body.source_text, body.request)
     started = time.perf_counter()
-    try:
-        output = client.generate(context, source_text=body.source_text,
-                                 request=body.request)
-    except LLMError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    # Seeded demo failure: an unchanged demo case always starts from its
+    # scripted bad answer, in mock and live mode alike, so the recovery tools
+    # can be demonstrated on a known failure (Assignment 1's study design uses
+    # seeded unsatisfactory summaries). It is labelled as not written by the
+    # model; every later step uses the real model in live mode.
+    sample = find_sample(body.source_text)
+    seeded = bool(sample) and not body.compare_to.strip() and \
+        body.request.strip() == sample["request"].strip()
+    if seeded:
+        output = sample["bad_output"]
+    else:
+        try:
+            output = client.generate(context, source_text=body.source_text,
+                                     request=body.request)
+        except LLMError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
     elapsed_ms = round((time.perf_counter() - started) * 1000)
     return {
+        "seeded": seeded,
         "changes": diff_words(body.compare_to, output) if body.compare_to.strip() else None,
         # Suggested fixes, computed in code; shown as suggestions only (L03).
         "checks": run_checks(output, body.source_text, body.request),
