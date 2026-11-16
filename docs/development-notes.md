@@ -18,3 +18,29 @@ and how it was checked.
   so the waiting feedback behaves as it would with the live model.
 - **Change during build: demo label clears when the text is edited**, so the
   interface never claims an edited text is still a demo case.
+
+## Stage 2: recovery tools
+
+- **Built:** five correction buttons with a hint box (hover or keyboard focus);
+  free-text correction; `/api/revise`; word-level change detection and report
+  computed by code (`app/diffing.py`); version history with authorship labels
+  ("You chose this fix; the AI rewrote the answer"); Undo; 9 new tests.
+- **Design decision: hints come from the prompt specification.** Each button's
+  hint is served from the same `REVISIONS` entry as its prompt, so the preview
+  cannot drift from what the button really asks for (feedforward, gulf of
+  execution, L06).
+- **Design decision: a hint box, not browser tooltips.** Native tooltips appear
+  after a delay and not on keyboard focus; a fixed hint box is visible, readable
+  and works with the keyboard.
+- **Change during build: highlighting new words only by default.** The first
+  version showed added and removed words inline. In a browser check of the
+  "Simpler" rewrite, nearly every word was struck through or highlighted and the
+  answer became hard to read (extraneous cognitive load, L05). The default now
+  highlights only new words; removed words are an option. A "Mostly rewritten"
+  note is added when 60% or more of the words were removed.
+- **Design decision: Undo never deletes.** Undo returns to the version the
+  current one was made from; every version stays in the history and can be
+  reopened, so an undo can itself be undone (reversibility, L01).
+- **Checked:** 17 tests pass; scripted browser walk-through of three scenarios
+  (too technical → Simpler; Shorter makes it worse → Undo → own correction;
+  missing point → Fix missing point) with screenshots.

@@ -9,11 +9,15 @@ explanation misses the mark.
 ## Project status
 
 - **Implemented:** paste text, choose Summarise or Explain, get an AI answer;
-  working indicator; "show what was sent to the model" panel.
+  five correction buttons (Shorter, Simpler, Add example, More detail, Fix
+  missing point) with a preview of what each will change; free-text correction;
+  highlighting of new words (optionally removed words too) with a change report
+  computed by code; version history with authorship labels and undo; working
+  indicator; "show what was sent to the model" panel.
 - **Simulated:** mock mode with three seeded bad first answers (too technical,
-  too long, missing the key point).
-- **Not yet built:** recovery tools (correction buttons, free-text correction,
-  visible auto-rewrite, change highlighting, version history).
+  too long, missing the key point) and scripted revisions for the demo paths.
+- **Not yet built:** visible automatic prompt rewrite (Auto-fix), suggested
+  fix, live prompt test cases.
 
 ## Technology stack
 

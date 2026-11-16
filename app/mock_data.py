@@ -122,3 +122,57 @@ def public_samples() -> list[dict]:
         {k: s[k] for k in ("id", "title", "failure", "mode", "request", "source")}
         for s in SAMPLES
     ]
+
+
+# Canned revisions for the demo paths shown in the storyboards. Keys are
+# (sample id, button id). Anything else falls back to a simple, clearly
+# labelled mock transformation in llm.MockClient.
+CANNED_REVISIONS = {
+    ("too-technical", "simpler"): (
+        "Plants make their own food using sunlight. Inside their leaves is a "
+        "green substance called chlorophyll, which soaks up light. The plant "
+        "uses that light energy to turn carbon dioxide from the air and water "
+        "from the soil into sugar, which it uses to grow. Oxygen is given off "
+        "as a by-product, which is why plants matter for the air we breathe. "
+        "The process works faster in brighter light, up to a limit."
+    ),
+    # A correction that makes things worse: shorter, but still full of jargon.
+    # Used in the storyboard where the person undoes and types a correction.
+    ("too-technical", "shorter"): (
+        "Photosynthesis uses light-dependent reactions in the thylakoids to make "
+        "ATP and NADPH, which drive carbon fixation into glucose in the stroma, "
+        "releasing O2 from water photolysis."
+    ),
+    ("too-technical", "example"): (
+        "Photosynthesis comprises light-dependent reactions in the thylakoid "
+        "membranes, generating ATP and NADPH via photophosphorylation, and "
+        "light-independent reactions in the stroma, where these reducing "
+        "equivalents drive carbon fixation into glucose. For example, the "
+        "source notes that the rate falls in low light and rises as light "
+        "increases, up to a limit."
+    ),
+    ("too-long", "shorter"): (
+        "Cognitive load theory says working memory is limited, so tasks compete "
+        "for space. It separates three kinds of load: intrinsic (the topic's "
+        "difficulty), germane (useful effort to understand) and extraneous "
+        "(caused by poor design). Designers cannot remove intrinsic load but can "
+        "cut extraneous load, for example by putting labels directly on a diagram."
+    ),
+    ("missing-point", "missing"): (
+        "Urban heat islands are cities that are warmer than the countryside "
+        "around them. Dark roads and roofs absorb sunlight and release heat at "
+        "night, buildings trap warm air, there are fewer trees for shade, and "
+        "cars and air conditioning add waste heat. Cities can respond by "
+        "planting trees and parks, painting roofs light colours, adding green "
+        "roofs and using cooler paving materials."
+    ),
+    ("missing-point", "detail"): (
+        "Urban heat islands are areas where cities are several degrees warmer "
+        "than nearby countryside. This happens because dark roads and roofs "
+        "absorb sunlight during the day and release heat at night, buildings "
+        "block wind and trap warm air, and cities have fewer trees and plants "
+        "to provide shade and cool the air through evaporation. Waste heat from "
+        "cars and air conditioning also contributes. As a result, hotter cities "
+        "use more energy and can be harmful to health during heatwaves."
+    ),
+}

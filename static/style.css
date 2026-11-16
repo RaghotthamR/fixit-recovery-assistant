@@ -142,3 +142,82 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   max-height: 260px;
   overflow: auto;
 }
+
+.column { display: flex; flex-direction: column; gap: 20px; }
+
+button.secondary {
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent-dark);
+  background: #fff;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+}
+button.secondary:hover:not(:disabled) { background: #eef2ff; }
+#correct-btn { margin-top: 10px; }
+
+.version-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.who { display: block; color: var(--muted); font-size: 0.85rem; }
+.version-actions { display: flex; align-items: center; gap: 12px; }
+.toggle { font-size: 0.85rem; color: var(--muted); }
+
+.output ins {
+  background: #dff3e6;
+  color: #135c2e;
+  text-decoration: none;
+  border-radius: 3px;
+}
+.output del {
+  background: #fbe3e3;
+  color: #8a1c1c;
+  border-radius: 3px;
+}
+
+.report {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 0.88rem;
+}
+
+.fix-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.fix-buttons button { padding: 8px 12px; }
+.fix-hint {
+  min-height: 2.8em;
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  background: #f3f6ff;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.history-list { list-style: none; padding: 0; margin: 8px 0 0; }
+.history-list li { margin-bottom: 6px; }
+.history-list button {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.88rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.history-list button:hover { background: var(--bg); }
+.history-list button.current { border-color: var(--accent); background: #f3f6ff; }
+.history-list .meta { display: block; color: var(--muted); font-size: 0.8rem; }
+
+.small-select { width: auto; padding: 4px 8px; font-size: 0.85rem; }
+.output del { margin-right: 3px; }

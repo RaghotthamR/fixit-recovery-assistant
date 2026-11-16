@@ -45,27 +45,67 @@
       <button id="generate-btn" class="primary">Generate</button>
     </section>
 
-    <!-- Output: what the system gives back -->
-    <section class="card" aria-labelledby="output-heading">
-      <h2 id="output-heading">2. AI answer</h2>
+    <!-- Output and recovery: what the system gives back, and how to fix it -->
+    <div class="column">
+      <section class="card" aria-labelledby="output-heading">
+        <h2 id="output-heading">2. AI answer</h2>
 
-      <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+        <div id="status" class="status" role="status" aria-live="polite" hidden></div>
 
-      <div id="empty-state" class="empty">
-        Your answer will appear here. Nothing is sent until you press Generate.
-      </div>
+        <div id="empty-state" class="empty">
+          Your answer will appear here. Nothing is sent until you press Generate.
+        </div>
 
-      <article id="output" class="output" hidden></article>
-      <p id="output-meta" class="hint" hidden></p>
+        <div id="version-bar" class="version-bar" hidden>
+          <div>
+            <strong id="version-title"></strong>
+            <span id="version-who" class="who"></span>
+          </div>
+          <div class="version-actions">
+            <label class="toggle" for="change-view">Highlight</label>
+            <select id="change-view" class="small-select">
+              <option value="added" selected>New words</option>
+              <option value="all">New and removed words</option>
+              <option value="none">Nothing</option>
+            </select>
+            <button id="undo-btn" class="secondary" title="Go back to the previous version. Nothing is deleted.">Undo</button>
+          </div>
+        </div>
 
-      <details id="sent-panel" class="sent" hidden>
-        <summary>Show what was sent to the model</summary>
-        <h3>System instruction</h3>
-        <pre id="sent-system"></pre>
-        <h3>Message</h3>
-        <pre id="sent-user"></pre>
-      </details>
-    </section>
+        <article id="output" class="output" hidden></article>
+        <p id="change-report" class="report" hidden></p>
+        <p id="output-meta" class="hint" hidden></p>
+
+        <details id="sent-panel" class="sent" hidden>
+          <summary>Show what was sent to the model</summary>
+          <h3>System instruction</h3>
+          <pre id="sent-system"></pre>
+          <h3>Message</h3>
+          <pre id="sent-user"></pre>
+        </details>
+      </section>
+
+      <section id="recovery" class="card" aria-labelledby="recovery-heading" hidden>
+        <h2 id="recovery-heading">3. Not right? Fix it</h2>
+
+        <p class="label">Quick fixes</p>
+        <div id="fix-buttons" class="fix-buttons"></div>
+        <p id="fix-hint" class="fix-hint" aria-live="polite">
+          Point at a button to see exactly what it will change before you click.
+        </p>
+
+        <label for="correction" class="label">Or say what is wrong, in your own words</label>
+        <textarea id="correction" rows="2" maxlength="500"
+          placeholder="e.g. Mention that plants release oxygen"></textarea>
+        <button id="correct-btn" class="secondary">Apply my correction</button>
+      </section>
+
+      <section id="history" class="card" aria-labelledby="history-heading" hidden>
+        <h2 id="history-heading">History</h2>
+        <p class="hint">Every version is kept for this answer. Select one to go back to it.</p>
+        <ol id="history-list" class="history-list"></ol>
+      </section>
+    </div>
   </main>
 
   <script src="/static/app.js"></script>

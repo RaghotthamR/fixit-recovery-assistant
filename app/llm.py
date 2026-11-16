@@ -9,7 +9,7 @@ import re
 import time
 
 from . import config
-from .mock_data import find_sample
+from .mock_data import CANNED_REVISIONS, find_sample
 
 
 class LLMError(Exception):
@@ -17,18 +17,59 @@ class LLMError(Exception):
 
 
 class MockClient:
+    """Deterministic stand-in for the model (labelled 'Simulated').
+
+    Seeded demo cases return scripted answers so storyboards are repeatable.
+    Any other input gets a simple transformation, always prefixed
+    "[Mock response]" so it can never be mistaken for a real model answer.
+    """
+
     name = "mock"
 
-    def generate(self, context: dict, *, source_text: str = "") -> str:
+    def generate(self, context: dict, *, source_text: str = "",
+                 revision: dict | None = None) -> str:
         # Simulated latency so the waiting feedback behaves as it would live.
         time.sleep(config.MOCK_DELAY_MS / 1000)
         sample = find_sample(source_text)
-        if sample:
-            return sample["bad_output"]
-        # Unknown text: a simple, clearly labelled extract of the first sentences.
-        sentences = re.split(r"(?<=[.!?])\s+", source_text.strip())
-        extract = " ".join(sentences[:3]).strip()
-        return f"[Mock response] {extract}" if extract else "[Mock response]"
+        if revision is None:
+            if sample:
+                return sample["bad_output"]
+            return f"[Mock response] {_first_sentences(source_text, 3)}".strip()
+        return self._revise(sample, source_text, revision)
+
+    def _revise(self, sample, source_text: str, revision: dict) -> str:
+        button = revision.get("button")
+        current = _strip_mock_label(revision.get("current", ""))
+        if sample and button and (sample["id"], button) in CANNED_REVISIONS:
+            return CANNED_REVISIONS[(sample["id"], button)]
+        source_sents = _sentences(source_text)
+        current_sents = _sentences(current)
+        if button == "shorter":
+            keep = max(1, len(current_sents) // 2)
+            text = " ".join(current_sents[:keep])
+        elif button == "simpler":
+            text = _first_sentences(source_text, 3)
+        elif button == "example":
+            text = current + " (A mock answer would add an example from the source here.)"
+        elif button in ("detail", "missing"):
+            extra = next((s for s in source_sents if s not in current), "")
+            text = f"{current} {extra}".strip()
+        else:  # free-text correction
+            text = (f"{current} (A mock answer would apply your correction "
+                    f"here: \"{revision.get('correction', '').strip()}\".)")
+        return f"[Mock response] {text}".strip()
+
+
+def _sentences(text: str) -> list[str]:
+    return [s for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s]
+
+
+def _first_sentences(text: str, n: int) -> str:
+    return " ".join(_sentences(text)[:n])
+
+
+def _strip_mock_label(text: str) -> str:
+    return text.removeprefix("[Mock response]").strip()
 
 
 class GeminiClient:
@@ -39,7 +80,8 @@ class GeminiClient:
         self._client = genai.Client(api_key=api_key)
         self.name = model
 
-    def generate(self, context: dict, *, source_text: str = "") -> str:
+    def generate(self, context: dict, *, source_text: str = "",
+                 revision: dict | None = None) -> str:
         types = self._genai.types
         try:
             response = self._client.models.generate_content(
