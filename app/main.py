@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from . import config
 from .llm import LLMError, get_client
 from .autofix import ProposalError, parse_proposal
+from .checks import run_checks
 from .diffing import diff_words
 from .mock_data import public_samples
 from .prompts import (
@@ -85,6 +86,8 @@ def generate(body: GenerateWithCompare):
     elapsed_ms = round((time.perf_counter() - started) * 1000)
     return {
         "changes": diff_words(body.compare_to, output) if body.compare_to.strip() else None,
+        # Suggested fixes, computed in code; shown as suggestions only (L03).
+        "checks": run_checks(output, body.source_text, body.request),
         "output": output,
         "mode": body.mode,
         "model": client.name,
@@ -123,6 +126,7 @@ def revise(body: ReviseRequest):
         "elapsed_ms": elapsed_ms,
         # Computed by code from the two texts, not reported by the model.
         "changes": diff_words(body.current_answer, output),
+        "checks": run_checks(output, body.source_text, body.request),
         "sent": context,
     }
 

@@ -10,6 +10,7 @@ import re
 import time
 
 from . import config
+from .checks import _content_words, _stem
 from .mock_data import AUTOFIX, CANNED_REVISIONS, find_sample
 
 
@@ -77,9 +78,30 @@ class MockClient:
             extra = next((s for s in source_sents if s not in current), "")
             text = f"{current} {extra}".strip()
         else:  # free-text correction
+            correction = revision.get("correction", "").strip()
+            absent = _absent_from_source(correction, source_text, current)
+            if absent:
+                # Decline repair turn (L07): say what the source lacks instead
+                # of inventing it (sycophancy, L08).
+                return (f"{current}\n\nYour text does not mention "
+                        f"{', '.join(absent)}, so FixIt has not added it.")
             text = (f"{current} (A mock answer would apply your correction "
-                    f"here: \"{revision.get('correction', '').strip()}\".)")
+                    f"here: \"{correction}\".)")
         return f"[Mock response] {text}".strip()
+
+
+def _absent_from_source(correction: str, source: str, current: str) -> list[str]:
+    """Content words of a correction found in neither the source nor the answer.
+
+    Instruction words such as 'mention' or 'remove' are ignored; only words
+    that name content count.
+    """
+    known = {_stem(w) for w in _content_words(source + " " + current)}
+    instruction = {"mention", "include", "remove", "delete", "change", "please",
+                   "explain", "describe", "words", "sentence", "sentences",
+                   "shorter", "longer", "simpler", "clearer", "should", "answer"}
+    return [f"“{w}”" for w in sorted(_content_words(correction))
+            if len(w) >= 5 and w not in instruction and _stem(w) not in known]
 
 
 def _sentences(text: str) -> list[str]:

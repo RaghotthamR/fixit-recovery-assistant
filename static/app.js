@@ -406,7 +406,41 @@ function renderCurrent() {
   $("sent-user").textContent = d.sent.user;
   $("sent-panel").hidden = false;
 
+  renderNoticed(v);
   renderHistory();
+}
+
+// Suggested fixes: the system points out a likely problem and highlights a
+// button, but never applies a fix itself. The person decides, and can dismiss
+// a finding (mixed initiative, L03; efficient dismissal, Amershi et al.).
+function renderNoticed(v) {
+  const findings = (v.data.checks || []).filter((f) => !(v.dismissed || []).includes(f.id));
+  const list = $("noticed-list");
+  list.replaceChildren();
+  for (const b of document.querySelectorAll("#fix-buttons button")) b.classList.remove("suggested");
+
+  for (const f of findings) {
+    const control = state.controls.find((c) => c.id === f.button);
+    const li = document.createElement("li");
+    li.append(document.createTextNode(`${f.message} `));
+    if (control) {
+      const s = document.createElement("span");
+      s.className = "suggest";
+      s.textContent = `Suggested fix: ${control.label}.`;
+      li.appendChild(s);
+      document.querySelector(`[data-control="${f.button}"]`)?.classList.add("suggested");
+    }
+    const dismiss = document.createElement("button");
+    dismiss.className = "link-btn";
+    dismiss.textContent = "Not a problem";
+    dismiss.addEventListener("click", () => {
+      v.dismissed = [...(v.dismissed || []), f.id];
+      renderNoticed(v);
+    });
+    li.appendChild(dismiss);
+    list.appendChild(li);
+  }
+  $("noticed").hidden = findings.length === 0;
 }
 
 // The report is computed by code from the two texts, not taken from the model.

@@ -15,11 +15,16 @@ explanation misses the mark.
   computed by code; version history with authorship labels and undo;
   **Auto-fix**, which proposes a rewritten request with its diagnosis, changes
   and assumptions, lets the person edit it, and runs nothing until they approve;
+  **suggested fix**: checks run in code on every answer (length against the
+  request, long words not in the source, requested points left out) and
+  highlight a likely button, which the person can use or dismiss; decline
+  behaviour when a correction asks for something the source does not contain;
   working indicator; "show what was sent to the model" panel.
 - **Simulated:** mock mode with three seeded bad first answers (too technical,
   too long, missing the key point), scripted revisions and scripted Auto-fix
   proposals for the demo paths.
-- **Not yet built:** suggested fix, live prompt test cases.
+- **Not yet built:** live prompt test runner (fixed test cases against the
+  real model).
 
 ## Technology stack
 

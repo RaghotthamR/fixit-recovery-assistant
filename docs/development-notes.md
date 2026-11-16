@@ -69,3 +69,30 @@ and how it was checked.
   (extraneous load, L05). Checked with screenshots.
 - **Checked:** 27 tests pass; scripted browser run of propose → edit → run,
   and propose → cancel.
+
+## Stage 4: suggested fix and decline
+
+- **Built:** `app/checks.py` runs three checks in code on every answer and
+  returns findings with the button they suggest; a "FixIt noticed (you decide
+  whether to act)" panel; the suggested button is highlighted; each finding can
+  be dismissed ("Not a problem"); mock mode demonstrates the decline turn.
+  17 new tests (44 in total).
+- **Design decision: suggest, never apply.** The system infers a likely problem
+  but the person decides (mixed initiative, ask rather than act, L03). This
+  also gives the system a signal beyond explicit commands, the first of the
+  four properties in the module's working definition (L02).
+- **Design decision: checks in code, not a second model call.** They are fast,
+  free, repeatable, and their evidence can be shown ("178 words; you asked for
+  about 60").
+- **Change during build: criteria tightened after false alarms.** The first
+  version fired on good answers: a plain-language rewrite was flagged as
+  jargon because of ordinary new words ("sunlight", "brighter"), and a request
+  saying "leave out examples" produced a "missing point" about the example.
+  Following the cry-wolf effect (L04), the criteria were made cautious: the
+  jargon check needs at least 4 such words making up 10% of the answer; the
+  missing-point check ignores what the request says to leave out and only
+  flags gaps that are at least 20% of the source's content. Result on the demo
+  set: 3 of 3 bad answers flagged, 0 of 6 good answers flagged (tested).
+- **Idea rejected: warning about new words after every revision.** It flagged
+  ordinary paraphrase words on good rewrites; the false-alarm cost was too
+  high for the value, so the decline behaviour stays in the prompt instead.
