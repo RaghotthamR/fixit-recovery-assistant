@@ -175,17 +175,25 @@ def run(client, repeat: int, delay: float) -> tuple[list[dict], int, int]:
             except LLMError as exc:
                 output, error = "", str(exc)
             for name, check in case["criteria"]:
-                ok = bool(output) and _safe(check, output)
+                if error:
+                    # The model never answered: an error, not a failed criterion.
+                    rows.append({"case": case["id"], "run": attempt, "criterion": name,
+                                 "ok": None, "words": 0, "note": error})
+                    continue
+                ok = _safe(check, output)
                 passed += ok
                 total += 1
                 rows.append({"case": case["id"], "run": attempt, "criterion": name,
-                             "ok": ok, "words": words(output),
-                             "note": error or _snippet(output)})
+                             "ok": ok, "words": words(output), "note": _snippet(output)})
             print(f"{case['id']} (run {attempt}): "
                   f"{'error: ' + error if error else 'done'}")
             if delay:
                 time.sleep(delay)
     return rows, passed, total
+
+
+def _result(ok) -> str:
+    return "error (not scored)" if ok is None else "pass" if ok else "**FAIL**"
 
 
 def _safe(check, output) -> bool:
@@ -208,7 +216,9 @@ def write_report(rows, passed, total, model: str, repeat: int) -> Path:
         "",
         f"- Run: {stamp.replace('_', ' ')}",
         f"- Repeats per case: {repeat}",
-        f"- **Passed {passed} of {total} criteria**",
+        f"- **Passed {passed} of {total} scored criteria**",
+        f"- Not scored (model error, e.g. service busy): "
+        f"{sum(1 for r in rows if r['ok'] is None)}",
         "",
         "| Case | Run | Criterion | Result | Words | Output (start) or error |",
         "|---|---|---|---|---|---|",
@@ -216,7 +226,7 @@ def write_report(rows, passed, total, model: str, repeat: int) -> Path:
     for r in rows:
         note = r["note"].replace("|", "\\|")
         lines.append(f"| {r['case']} | {r['run']} | {r['criterion']} | "
-                     f"{'pass' if r['ok'] else '**FAIL**'} | {r['words']} | {note} |")
+                     f"{_result(r['ok'])} | {r['words']} | {note} |")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
@@ -241,7 +251,10 @@ def main():
 
     rows, passed, total = run(client, args.repeat, delay)
     path = write_report(rows, passed, total, client.name, args.repeat)
-    print(f"\nPassed {passed} of {total} criteria. Report: {path}")
+    errors = sum(1 for r in rows if r["ok"] is None)
+    print(f"\nPassed {passed} of {total} scored criteria"
+          f"{f'; {errors} not scored because of model errors' if errors else ''}. "
+          f"Report: {path}")
 
 
 if __name__ == "__main__":

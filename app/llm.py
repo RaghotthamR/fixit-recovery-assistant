@@ -131,18 +131,50 @@ class GeminiClient:
         settings = {"system_instruction": context["system"]}
         if json_mode:
             settings["response_mime_type"] = "application/json"
-        try:
-            response = self._client.models.generate_content(
-                model=self.name,
-                contents=context["user"],
-                config=types.GenerateContentConfig(**settings),
-            )
-        except Exception as exc:  # network, quota, auth or model-name errors
-            raise LLMError(f"The model call failed: {exc}") from exc
+        # Retry briefly when the service is busy or rate-limited: these errors
+        # are usually temporary (seen in live testing as "503 UNAVAILABLE").
+        # Other errors (bad key, wrong model name) are not retried.
+        attempts = 1 + len(RETRY_DELAYS)
+        for attempt in range(attempts):
+            try:
+                response = self._client.models.generate_content(
+                    model=self.name,
+                    contents=context["user"],
+                    config=types.GenerateContentConfig(**settings),
+                )
+                break
+            except Exception as exc:  # network, quota, auth or model-name errors
+                if _is_temporary(exc) and attempt < attempts - 1:
+                    time.sleep(RETRY_DELAYS[attempt])
+                    continue
+                raise LLMError(_friendly(exc)) from exc
         text = (response.text or "").strip()
         if not text:
             raise LLMError("The model returned an empty response.")
         return text
+
+
+RETRY_DELAYS = (2, 5)  # seconds to wait before the 2nd and 3rd attempt
+
+
+def _is_temporary(exc: Exception) -> bool:
+    text = str(exc)
+    return any(k in text for k in ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED",
+                                   "overloaded", "high demand"))
+
+
+def _friendly(exc: Exception) -> str:
+    """A message the person can act on, instead of a raw error dump."""
+    text = str(exc)
+    if "503" in text or "UNAVAILABLE" in text or "high demand" in text:
+        return "Google's model is busy right now (high demand)."
+    if "429" in text or "RESOURCE_EXHAUSTED" in text:
+        return "The free usage limit was reached. Wait a minute and try again."
+    if "API key" in text or "API_KEY" in text or "401" in text or "403" in text:
+        return "The Gemini API key was not accepted. Check GEMINI_API_KEY in .env."
+    if "404" in text or "not found" in text.lower():
+        return "The model name was not found. Check GEMINI_MODEL in .env."
+    return f"The model call failed: {text[:200]}"
 
 
 def get_client():

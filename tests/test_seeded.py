@@ -37,3 +37,46 @@ def test_prompt_test_cases_are_well_formed():
         context = case["call"]()
         assert context["system"] and context["user"]
         assert case["criteria"]
+
+
+def test_busy_errors_are_retried_then_reported_clearly(monkeypatch):
+    from app import llm
+
+    calls = {"n": 0}
+
+    class FakeModels:
+        def generate_content(self, **kwargs):
+            calls["n"] += 1
+            raise RuntimeError("503 UNAVAILABLE. This model is currently experiencing high demand.")
+
+    g = llm.GeminiClient.__new__(llm.GeminiClient)
+    from google import genai
+    g._genai, g.name = genai, "test-model"
+    g._client = type("C", (), {"models": FakeModels()})()
+    monkeypatch.setattr(llm, "RETRY_DELAYS", (0, 0))
+    try:
+        g.generate({"system": "s", "user": "u"})
+    except llm.LLMError as exc:
+        assert "busy" in str(exc)
+    assert calls["n"] == 3
+
+
+def test_bad_key_is_not_retried(monkeypatch):
+    from app import llm
+
+    calls = {"n": 0}
+
+    class FakeModels:
+        def generate_content(self, **kwargs):
+            calls["n"] += 1
+            raise RuntimeError("400 API key not valid")
+
+    g = llm.GeminiClient.__new__(llm.GeminiClient)
+    from google import genai
+    g._genai, g.name = genai, "test-model"
+    g._client = type("C", (), {"models": FakeModels()})()
+    try:
+        g.generate({"system": "s", "user": "u"})
+    except llm.LLMError as exc:
+        assert "key" in str(exc)
+    assert calls["n"] == 1

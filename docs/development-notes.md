@@ -111,3 +111,14 @@ and how it was checked.
   declining an unsupported request, a valid Auto-fix proposal). Results are
   saved to `docs/prompt-tests/` and linked from the prompt log. `--repeat`
   reruns cases to show non-determinism (L08).
+- **First live run (2026-11-16, gemini-3.6-flash):** every criterion that ran
+  passed (11 of 11), including ignoring an instruction hidden in the source.
+  Two cases never got an answer: Google returned "503 UNAVAILABLE, high
+  demand".
+- **Change from the live run: retry and clearer errors.** A busy service would
+  have broken a live demo with a raw error. The client now retries busy and
+  rate-limit errors twice (after 2 s and 5 s) and does not retry errors that
+  cannot fix themselves (bad key, wrong model name). Messages are now actionable
+  ("Google's model is busy right now… Nothing was changed; you can try again").
+  The test runner records model errors as "not scored", so a busy server is not
+  counted as a failed prompt. 2 new tests (49 in total).
