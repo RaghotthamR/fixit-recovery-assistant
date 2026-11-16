@@ -1,0 +1,124 @@
+"""Seeded demo cases for mock mode.
+
+Each case pairs a short original reading with a deliberately unsatisfactory
+first answer, reproducing the failure types from Assignment 1 (too technical,
+too long, missing the key point). This makes demonstrations repeatable and lets
+the app run with no API key. All texts were written for this project.
+"""
+
+SAMPLES = [
+    {
+        "id": "too-technical",
+        "title": "Too technical: photosynthesis",
+        "failure": "Uses jargon a first-year student will not follow.",
+        "mode": "summarise",
+        "request": "Summarise this for a first-year student in about 80 words.",
+        "source": (
+            "Plants make their own food through photosynthesis. Inside leaf "
+            "cells, structures called chloroplasts contain a green pigment, "
+            "chlorophyll, which absorbs light. The plant uses this light energy "
+            "to combine carbon dioxide from the air with water from the soil, "
+            "producing glucose, a sugar the plant uses for energy and growth. "
+            "Oxygen is released as a by-product, which is why plants are "
+            "essential for the air animals breathe. Photosynthesis happens in "
+            "two stages. In the first, light energy is captured and stored in "
+            "energy-carrying molecules. In the second, that stored energy is "
+            "used to build glucose. Because the process depends on light, its "
+            "rate falls in low light and rises as light increases, up to a limit."
+        ),
+        "bad_output": (
+            "Photosynthesis comprises light-dependent reactions in the thylakoid "
+            "membranes, generating ATP and NADPH via photophosphorylation, and "
+            "light-independent reactions in the stroma, where these reducing "
+            "equivalents drive carbon fixation into glucose. Chlorophyll-mediated "
+            "photon absorption initiates electron transport, with O2 evolved as "
+            "a by-product of water photolysis. The process exhibits light-"
+            "saturation kinetics, whereby the rate plateaus above a limiting "
+            "irradiance."
+        ),
+    },
+    {
+        "id": "too-long",
+        "title": "Too long: cognitive load",
+        "failure": "Far longer than the requested 60 words.",
+        "mode": "summarise",
+        "request": "Give me a 60-word summary.",
+        "source": (
+            "Cognitive load theory explains why some learning materials are "
+            "harder to use than others. Working memory can hold only a few "
+            "items at once, so every task competes for limited space. The "
+            "theory separates three kinds of load. Intrinsic load comes from "
+            "the difficulty of the topic itself. Germane load is the useful "
+            "effort of building understanding. Extraneous load is caused by "
+            "poor design, such as cluttered pages or instructions split across "
+            "several places. Designers cannot remove intrinsic load, but they "
+            "can reduce extraneous load, freeing capacity for learning. For "
+            "example, placing a label directly on a diagram, rather than in a "
+            "separate key, saves the reader from holding information in mind "
+            "while looking back and forth."
+        ),
+        "bad_output": (
+            "Cognitive load theory is a framework that seeks to explain why "
+            "certain learning materials are more difficult for learners to use "
+            "than other materials. At the heart of the theory is the idea that "
+            "working memory has a limited capacity and can only hold a small "
+            "number of items at any one time, which means that every task a "
+            "learner performs is in competition for this limited space. The "
+            "theory distinguishes between three different kinds of load. The "
+            "first is intrinsic load, which arises from the inherent difficulty "
+            "of the subject matter being learned. The second is germane load, "
+            "which refers to the productive mental effort involved in building "
+            "understanding and forming schemas. The third is extraneous load, "
+            "which is caused by poor instructional design choices, such as "
+            "cluttered pages or instructions that are split across several "
+            "locations. While designers are unable to remove intrinsic load, "
+            "they are able to reduce extraneous load, which frees up capacity "
+            "for learning. An example of this would be placing a label directly "
+            "onto a diagram instead of in a separate key."
+        ),
+    },
+    {
+        "id": "missing-point",
+        "title": "Missing the key point: urban heat islands",
+        "failure": "Describes the problem but leaves out the solutions, "
+                   "which the request asked for.",
+        "mode": "summarise",
+        "request": "Summarise the causes and what cities can do about it.",
+        "source": (
+            "Cities are often several degrees warmer than the countryside "
+            "around them, an effect known as the urban heat island. Dark "
+            "surfaces such as roads and roofs absorb sunlight during the day "
+            "and release heat at night. Buildings block wind and trap warm air, "
+            "and there are fewer trees and plants to provide shade and cool the "
+            "air through evaporation. Waste heat from cars and air conditioning "
+            "adds to the problem. Hotter cities increase energy use and can "
+            "harm health during heatwaves. Cities can respond in several ways: "
+            "planting trees and creating parks, painting roofs in light colours "
+            "so they reflect sunlight, adding green roofs covered with plants, "
+            "and using paving materials that stay cooler."
+        ),
+        "bad_output": (
+            "Urban heat islands are areas where cities are warmer than nearby "
+            "countryside. This happens because dark roads and roofs absorb "
+            "sunlight and release heat at night, buildings block wind and trap "
+            "warm air, and cities have fewer trees and plants. Waste heat from "
+            "cars and air conditioning also contributes. As a result, hotter "
+            "cities use more energy and can be harmful to health during heatwaves."
+        ),
+    },
+]
+
+_BY_SOURCE = {s["source"].strip(): s for s in SAMPLES}
+
+
+def find_sample(source_text: str):
+    """Return the seeded case whose source matches exactly, if any."""
+    return _BY_SOURCE.get(source_text.strip())
+
+
+def public_samples() -> list[dict]:
+    """Samples as sent to the browser (the bad output stays server-side)."""
+    return [
+        {k: s[k] for k in ("id", "title", "failure", "mode", "request", "source")}
+        for s in SAMPLES
+    ]
