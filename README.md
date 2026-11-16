@@ -12,12 +12,14 @@ explanation misses the mark.
   five correction buttons (Shorter, Simpler, Add example, More detail, Fix
   missing point) with a preview of what each will change; free-text correction;
   highlighting of new words (optionally removed words too) with a change report
-  computed by code; version history with authorship labels and undo; working
-  indicator; "show what was sent to the model" panel.
+  computed by code; version history with authorship labels and undo;
+  **Auto-fix**, which proposes a rewritten request with its diagnosis, changes
+  and assumptions, lets the person edit it, and runs nothing until they approve;
+  working indicator; "show what was sent to the model" panel.
 - **Simulated:** mock mode with three seeded bad first answers (too technical,
-  too long, missing the key point) and scripted revisions for the demo paths.
-- **Not yet built:** visible automatic prompt rewrite (Auto-fix), suggested
-  fix, live prompt test cases.
+  too long, missing the key point), scripted revisions and scripted Auto-fix
+  proposals for the demo paths.
+- **Not yet built:** suggested fix, live prompt test cases.
 
 ## Technology stack
 

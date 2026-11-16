@@ -14,9 +14,15 @@ from pydantic import BaseModel, Field
 
 from . import config
 from .llm import LLMError, get_client
+from .autofix import ProposalError, parse_proposal
 from .diffing import diff_words
 from .mock_data import public_samples
-from .prompts import REVISIONS, build_context, build_revision_context
+from .prompts import (
+    REVISIONS,
+    build_autofix_context,
+    build_context,
+    build_revision_context,
+)
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 MAX_SOURCE_CHARS = 12000
@@ -29,6 +35,15 @@ class GenerateRequest(BaseModel):
     source_text: str = Field(..., min_length=1, max_length=MAX_SOURCE_CHARS)
     mode: Literal["summarise", "explain"] = "summarise"
     request: str = Field("", max_length=500)
+
+
+class GenerateWithCompare(GenerateRequest):
+    # Optional: the answer this one replaces, so the change report can be built.
+    compare_to: str = Field("", max_length=MAX_SOURCE_CHARS)
+
+
+class AutofixRequest(GenerateRequest):
+    current_answer: str = Field(..., min_length=1, max_length=MAX_SOURCE_CHARS)
 
 
 class ReviseRequest(GenerateRequest):
@@ -57,17 +72,19 @@ def samples():
 
 
 @app.post("/api/generate")
-def generate(body: GenerateRequest):
+def generate(body: GenerateWithCompare):
     if not body.source_text.strip():
         raise HTTPException(status_code=422, detail="Paste some text first.")
     context = build_context(body.mode, body.source_text, body.request)
     started = time.perf_counter()
     try:
-        output = client.generate(context, source_text=body.source_text)
+        output = client.generate(context, source_text=body.source_text,
+                                 request=body.request)
     except LLMError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     elapsed_ms = round((time.perf_counter() - started) * 1000)
     return {
+        "changes": diff_words(body.compare_to, output) if body.compare_to.strip() else None,
         "output": output,
         "mode": body.mode,
         "model": client.name,
@@ -106,6 +123,36 @@ def revise(body: ReviseRequest):
         "elapsed_ms": elapsed_ms,
         # Computed by code from the two texts, not reported by the model.
         "changes": diff_words(body.current_answer, output),
+        "sent": context,
+    }
+
+
+@app.post("/api/autofix")
+def autofix(body: AutofixRequest):
+    """Return a proposed rewritten request. Nothing is run here: the page shows
+    the proposal and only runs it after the person approves (L12)."""
+    context = build_autofix_context(body.mode, body.source_text, body.request,
+                                    body.current_answer)
+    started = time.perf_counter()
+    try:
+        raw = client.generate(context, source_text=body.source_text,
+                              request=body.request, json_mode=True)
+        proposal = parse_proposal(raw)
+    except LLMError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ProposalError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"{exc} Nothing was changed. Try again, or use a quick fix.",
+        ) from exc
+    elapsed_ms = round((time.perf_counter() - started) * 1000)
+    return {
+        "proposal": proposal.model_dump(),
+        # Which words of the request changed, computed by code (L12).
+        "request_changes": diff_words(body.request.strip(), proposal.rewritten_request),
+        "model": client.name,
+        "mock": config.MOCK_MODE,
+        "elapsed_ms": elapsed_ms,
         "sent": context,
     }
 

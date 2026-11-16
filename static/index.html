@@ -98,6 +98,43 @@
         <textarea id="correction" rows="2" maxlength="500"
           placeholder="e.g. Mention that plants release oxygen"></textarea>
         <button id="correct-btn" class="secondary">Apply my correction</button>
+
+        <div class="divider"></div>
+
+        <p class="label">Or let FixIt rewrite your request</p>
+        <p class="hint">FixIt suggests a better request and shows you every change and
+          assumption. Nothing runs until you approve it.</p>
+        <button id="autofix-btn" class="secondary">Suggest a better request (Auto-fix)</button>
+
+        <div id="proposal" class="proposal" hidden aria-labelledby="proposal-heading">
+          <h3 id="proposal-heading">Proposed request: check it before it runs</h3>
+          <p class="why"><strong>What seems wrong:</strong> <span id="proposal-diagnosis"></span></p>
+
+          <p class="mini-label">Your request was</p>
+          <p id="proposal-old" class="old-request"></p>
+
+          <label for="proposal-text" class="mini-label">FixIt suggests (new words highlighted)</label>
+          <div id="proposal-diff" class="proposal-diff"></div>
+          <textarea id="proposal-text" rows="3" maxlength="500" hidden></textarea>
+          <button id="proposal-edit" class="link-btn">Edit the suggestion</button>
+          <p id="proposal-edited" class="edited-note" hidden>You have edited the suggestion.</p>
+
+          <div class="proposal-lists">
+            <div>
+              <p class="mini-label">What it changed</p>
+              <ul id="proposal-changes"></ul>
+            </div>
+            <div class="assumptions">
+              <p class="mini-label">What it assumed about you: check these</p>
+              <ul id="proposal-assumptions"></ul>
+            </div>
+          </div>
+
+          <div class="proposal-actions">
+            <button id="proposal-run" class="primary">Run this request</button>
+            <button id="proposal-cancel" class="secondary">Cancel</button>
+          </div>
+        </div>
       </section>
 
       <section id="history" class="card" aria-labelledby="history-heading" hidden>

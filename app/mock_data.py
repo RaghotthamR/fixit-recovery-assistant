@@ -176,3 +176,87 @@ CANNED_REVISIONS = {
         "use more energy and can be harmful to health during heatwaves."
     ),
 }
+
+
+# Scripted Auto-fix proposals for the demo cases, and the answer each demo
+# produces once a rewritten request is approved and run.
+AUTOFIX = {
+    "too-technical": {
+        "proposal": {
+            "diagnosis": "The answer uses technical terms (ATP, thylakoid, "
+                         "photophosphorylation) that a first-year student is "
+                         "unlikely to know.",
+            "rewritten_request": "Summarise this for a first-year student with no "
+                                 "biology background, in about 80 words of plain "
+                                 "everyday language. Avoid technical terms, or "
+                                 "explain any you must use in simple words.",
+            "changes": [
+                "Added: the reader has no biology background.",
+                "Added: use plain everyday language.",
+                "Added: avoid technical terms or explain them simply.",
+            ],
+            "assumptions": [
+                "You have no biology background.",
+                "About 80 words is still the length you want.",
+            ],
+        },
+        "output": (
+            "Plants make their own food from sunlight. A green substance in "
+            "their leaves, chlorophyll, captures light, and the plant uses that "
+            "energy to turn carbon dioxide from the air and water from the soil "
+            "into sugar for growth. Oxygen is released along the way, which is "
+            "why plants matter for the air we breathe. This happens in two "
+            "steps: first the light energy is captured, then it is used to make "
+            "sugar. More light speeds it up, but only to a point."
+        ),
+    },
+    "too-long": {
+        "proposal": {
+            "diagnosis": "The answer is about 190 words, far longer than the "
+                         "60 words requested.",
+            "rewritten_request": "Give me a summary of no more than 60 words. Keep "
+                                 "only the main idea and the three kinds of load; "
+                                 "leave out examples.",
+            "changes": [
+                "Changed: 'a 60-word summary' to a strict limit of no more than 60 words.",
+                "Added: keep the main idea and the three kinds of load.",
+                "Added: leave out examples.",
+            ],
+            "assumptions": [
+                "The three kinds of load are the part you need most.",
+                "You do not need the diagram example.",
+            ],
+        },
+        "output": (
+            "Cognitive load theory says working memory is limited, so learning "
+            "tasks compete for space. Intrinsic load comes from the topic, "
+            "germane load from building understanding, and extraneous load from "
+            "poor design. Designers can reduce extraneous load to free capacity "
+            "for learning."
+        ),
+    },
+    "missing-point": {
+        "proposal": {
+            "diagnosis": "The answer explains the causes but leaves out what "
+                         "cities can do, which the request asked for.",
+            "rewritten_request": "Summarise the causes of urban heat islands and, "
+                                 "in a separate sentence or two, list what cities "
+                                 "can do about them, as described in the text.",
+            "changes": [
+                "Added: name urban heat islands explicitly.",
+                "Added: give the solutions their own sentence or two so they are not dropped.",
+                "Added: use only the solutions described in the text.",
+            ],
+            "assumptions": [
+                "You want both causes and solutions with similar weight.",
+            ],
+        },
+        "output": (
+            "Cities are warmer than the countryside because dark roads and roofs "
+            "absorb heat, buildings trap warm air, there are fewer trees for "
+            "shade, and cars and air conditioning add waste heat. To cool down, "
+            "cities can plant trees and create parks, paint roofs in light "
+            "colours, add green roofs, and use paving that stays cooler."
+        ),
+    },
+}

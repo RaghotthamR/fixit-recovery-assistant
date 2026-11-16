@@ -5,11 +5,12 @@ not care which one is running. The mock makes the prototype runnable and
 repeatable without a key (labelled 'Simulated' in the report).
 """
 
+import json
 import re
 import time
 
 from . import config
-from .mock_data import CANNED_REVISIONS, find_sample
+from .mock_data import AUTOFIX, CANNED_REVISIONS, find_sample
 
 
 class LLMError(Exception):
@@ -27,15 +28,36 @@ class MockClient:
     name = "mock"
 
     def generate(self, context: dict, *, source_text: str = "",
-                 revision: dict | None = None) -> str:
+                 revision: dict | None = None, request: str = "",
+                 json_mode: bool = False) -> str:
         # Simulated latency so the waiting feedback behaves as it would live.
         time.sleep(config.MOCK_DELAY_MS / 1000)
         sample = find_sample(source_text)
+        if json_mode:
+            return self._autofix(sample, request)
         if revision is None:
             if sample:
+                # The demo's original request reproduces its bad first answer;
+                # any other request (e.g. an approved Auto-fix rewrite) gets the
+                # scripted better answer.
+                if request.strip() and request.strip() != sample["request"].strip():
+                    return AUTOFIX[sample["id"]]["output"]
                 return sample["bad_output"]
             return f"[Mock response] {_first_sentences(source_text, 3)}".strip()
         return self._revise(sample, source_text, revision)
+
+    def _autofix(self, sample, request: str) -> str:
+        if sample:
+            return json.dumps(AUTOFIX[sample["id"]]["proposal"])
+        base = request.strip() or "Summarise this."
+        return json.dumps({
+            "diagnosis": "[Mock] A real model would name the main problem here.",
+            "rewritten_request": f"{base} Write about 100 words in plain language "
+                                 f"for a first-year student and cover the main points.",
+            "changes": ["Added: about 100 words.", "Added: plain language.",
+                        "Added: cover the main points."],
+            "assumptions": ["Reader is a first-year student."],
+        })
 
     def _revise(self, sample, source_text: str, revision: dict) -> str:
         button = revision.get("button")
@@ -81,15 +103,17 @@ class GeminiClient:
         self.name = model
 
     def generate(self, context: dict, *, source_text: str = "",
-                 revision: dict | None = None) -> str:
+                 revision: dict | None = None, request: str = "",
+                 json_mode: bool = False) -> str:
         types = self._genai.types
+        settings = {"system_instruction": context["system"]}
+        if json_mode:
+            settings["response_mime_type"] = "application/json"
         try:
             response = self._client.models.generate_content(
                 model=self.name,
                 contents=context["user"],
-                config=types.GenerateContentConfig(
-                    system_instruction=context["system"],
-                ),
+                config=types.GenerateContentConfig(**settings),
             )
         except Exception as exc:  # network, quota, auth or model-name errors
             raise LLMError(f"The model call failed: {exc}") from exc

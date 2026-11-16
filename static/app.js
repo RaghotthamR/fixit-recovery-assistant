@@ -10,6 +10,7 @@ const state = {
   versions: [], // every answer for the current task, never deleted
   current: -1,  // index into versions of the answer being shown
   task: null,   // the source, mode and request the versions belong to
+  proposal: null, // an Auto-fix proposal waiting for the person's decision
   busy: false,
 };
 
@@ -23,6 +24,11 @@ async function init() {
   $("correct-btn").addEventListener("click", applyCorrection);
   $("undo-btn").addEventListener("click", undo);
   $("change-view").addEventListener("change", renderCurrent);
+  $("autofix-btn").addEventListener("click", requestAutofix);
+  $("proposal-run").addEventListener("click", runProposal);
+  $("proposal-cancel").addEventListener("click", cancelProposal);
+  $("proposal-text").addEventListener("input", markProposalEdited);
+  $("proposal-edit").addEventListener("click", editProposal);
   updateCharCount();
 }
 
@@ -117,6 +123,7 @@ async function generate() {
   if (!data) return;
 
   // A new Generate starts a new task, so its history starts again.
+  hideProposal();
   state.task = task;
   state.versions = [];
   addVersion({
@@ -132,6 +139,7 @@ async function generate() {
 async function applyButton(control) {
   const base = currentVersion();
   if (!base) return;
+  hideProposal();
   const data = await callApi(
     "/api/revise",
     { ...state.task, current_answer: base.text, button: control.id },
@@ -152,6 +160,7 @@ async function applyCorrection() {
   const base = currentVersion();
   const correction = $("correction").value.trim();
   if (!base) return;
+  hideProposal();
   if (!correction) {
     showError("Type what is wrong first, or use a quick fix.");
     return;
@@ -171,6 +180,119 @@ async function applyCorrection() {
     changes: data.changes,
     data,
   });
+}
+
+// ---------- Auto-fix: the model proposes, the person decides ----------
+
+async function requestAutofix() {
+  const base = currentVersion();
+  if (!base) return;
+  const data = await callApi(
+    "/api/autofix",
+    { ...state.task, current_answer: base.text },
+    $("autofix-btn"),
+  );
+  if (!data) return;
+  state.proposal = { ...data.proposal, basedOn: state.current };
+  showProposal(data);
+}
+
+function showProposal(data) {
+  const p = data.proposal;
+  $("proposal-diagnosis").textContent = p.diagnosis;
+  $("proposal-old").textContent = state.task.request.trim() || "(You did not write a request.)";
+
+  // Which words of the request changed, computed by code, not by the model.
+  const diffBox = $("proposal-diff");
+  diffBox.replaceChildren();
+  for (const seg of data.request_changes.segments) {
+    const tag = seg.type === "add" ? "ins" : seg.type === "del" ? "del" : "span";
+    const el = document.createElement(tag);
+    el.textContent = seg.text;
+    diffBox.appendChild(el);
+  }
+
+  // Show the highlighted suggestion once; the edit box opens only on request,
+  // so the person does not have to read the same request twice (L05).
+  $("proposal-text").value = p.rewritten_request;
+  $("proposal-text").hidden = true;
+  diffBox.hidden = false;
+  $("proposal-edit").hidden = false;
+  $("proposal-edited").hidden = true;
+  fillList("proposal-changes", p.changes, "No changes listed.");
+  fillList("proposal-assumptions", p.assumptions, "No assumptions listed.");
+  $("proposal").hidden = false;
+  $("proposal").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  $("proposal-run").focus();
+}
+
+function editProposal() {
+  $("proposal-diff").hidden = true;
+  $("proposal-edit").hidden = true;
+  $("proposal-text").hidden = false;
+  $("proposal-text").focus();
+}
+
+function fillList(id, items, emptyText) {
+  const ul = $(id);
+  ul.replaceChildren();
+  for (const text of items.length ? items : [emptyText]) {
+    const li = document.createElement("li");
+    li.textContent = text;
+    ul.appendChild(li);
+  }
+}
+
+// Noticing that the person edited the proposal: it changes the authorship
+// label of the result, and shows the person their edit was registered.
+function markProposalEdited() {
+  if (!state.proposal) return;
+  const edited = $("proposal-text").value.trim() !== state.proposal.rewritten_request.trim();
+  $("proposal-edited").hidden = !edited;
+}
+
+async function runProposal() {
+  if (!state.proposal) return;
+  const newRequest = $("proposal-text").value.trim();
+  if (!newRequest) {
+    showError("The request is empty. Write one, or cancel.");
+    return;
+  }
+  const edited = newRequest !== state.proposal.rewritten_request.trim();
+  const base = state.versions[state.proposal.basedOn];
+  const data = await callApi(
+    "/api/generate",
+    { ...state.task, request: newRequest, compare_to: base.text },
+    $("proposal-run"),
+  );
+  if (!data) return;
+
+  // The approved request becomes the request on screen: the screen holds the
+  // current state, so the person can see what the next answer is based on.
+  state.task = { ...state.task, request: newRequest };
+  $("request").value = newRequest;
+  const parent = state.proposal.basedOn;
+  hideProposal();
+  addVersion({
+    text: data.output,
+    action: "Auto-fix",
+    who: edited
+      ? "The AI proposed a new request; you edited and approved it"
+      : "The AI proposed a new request; you approved it",
+    parent,
+    changes: data.changes,
+    data,
+  });
+}
+
+function cancelProposal() {
+  hideProposal();
+  showNote("Auto-fix cancelled. Nothing was changed.");
+}
+
+function hideProposal() {
+  state.proposal = null;
+  $("proposal").hidden = true;
 }
 
 // One place for every call: immediate feedback, errors kept recoverable.
@@ -322,7 +444,8 @@ function renderHistory() {
 
 function setBusy(busy) {
   state.busy = busy;
-  for (const b of document.querySelectorAll("#fix-buttons button, #correct-btn, #generate-btn, #undo-btn")) {
+  for (const b of document.querySelectorAll(
+    "#fix-buttons button, #correct-btn, #generate-btn, #undo-btn, #autofix-btn, #proposal-run, #proposal-cancel")) {
     b.disabled = busy;
   }
   if (!busy) {

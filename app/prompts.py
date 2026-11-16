@@ -11,7 +11,7 @@ Design notes (module concepts):
   orders and records exactly what is sent, so it can be shown and logged.
 """
 
-PROMPT_VERSION = "v2"
+PROMPT_VERSION = "v3"
 
 SYSTEM_INSTRUCTION = """You help university students understand readings.
 
@@ -135,6 +135,51 @@ FREE_TEXT_INSTRUCTION = (
     "asks for information that is not in the source, do not invent it: keep the "
     "answer and add one sentence saying the source does not contain it."
 )
+
+
+# Auto-fix: the model proposes a rewritten request; the person reviews, edits
+# and approves it before anything runs ("the model proposes; your system
+# disposes", L12). Assignment 1 found that silent automatic rewriting can
+# override intent (Jahani et al.), so every change and assumption is listed.
+AUTOFIX_INSTRUCTION = """Task: The person's current answer did not meet their needs. Diagnose
+what is wrong with <current_answer> compared with the <request> and the
+<source>, then rewrite the person's request so that a model would produce a
+better answer.
+Audience: the person, who will read and approve your rewrite before it runs.
+Constraints:
+- Keep the person's goal. Do not add goals, topics or formats they did not ask
+  for, unless needed to fix the diagnosed problem.
+- Make implicit needs explicit (reader, length, level, what must be covered).
+- List every change you made to the request.
+- List every assumption you made that the person should check, phrased so
+  they can correct it (e.g. "Reader is a first-year student").
+- The rewritten request must be at most 60 words.
+Success criteria:
+- The diagnosis names one concrete problem with the current answer.
+- Every difference between the old and new request appears in "changes".
+- Any guess about the person appears in "assumptions".
+Output format: JSON only, no other text, exactly this shape:
+{"diagnosis": "one sentence", "rewritten_request": "the new request",
+ "changes": ["...", "..."], "assumptions": ["...", "..."]}"""
+
+
+def build_autofix_context(mode: str, source_text: str, request: str,
+                          current_answer: str) -> dict:
+    request_text = request.strip() or "(none given)"
+    user_message = (
+        f"The person asked FixIt to {TASKS[mode]['label'].lower()} the source.\n\n"
+        f"{AUTOFIX_INSTRUCTION}\n\n"
+        f"<source>\n{source_text.strip()}\n</source>\n\n"
+        f"<request>\n{request_text}\n</request>\n\n"
+        f"<current_answer>\n{current_answer.strip()}\n</current_answer>\n\n"
+        f"Now return the JSON object described above."
+    )
+    return {
+        "prompt_version": PROMPT_VERSION,
+        "action": "Auto-fix proposal",
+        "system": SYSTEM_INSTRUCTION,
+        "user": user_message,
+    }
 
 
 def build_task_block(mode: str) -> str:

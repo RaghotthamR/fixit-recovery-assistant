@@ -44,3 +44,28 @@ and how it was checked.
 - **Checked:** 17 tests pass; scripted browser walk-through of three scenarios
   (too technical → Simpler; Shorter makes it worse → Undo → own correction;
   missing point → Fix missing point) with screenshots.
+
+## Stage 3: Auto-fix (visible, editable prompt rewrite)
+
+- **Built:** `/api/autofix` returns a proposal only (diagnosis, rewritten
+  request, changes, assumptions); nothing is generated until the person clicks
+  "Run this request". The request diff is computed by code. The approved
+  request replaces the request on screen, and the new version is labelled
+  "The AI proposed a new request; you approved it" or "you edited and approved
+  it". Cancel changes nothing.
+- **Design decision: confirm before running.** Buttons run at once because
+  their result is visible and undoable; Auto-fix changes the request, which is
+  the person's intent, so it is confirmed first (reversible/visible quadrant,
+  L12; Shneiderman's two dimensions: high automation with high control).
+- **Design decision: assumptions shown separately and highlighted.** Guesses
+  about the person are the part most likely to be wrong and most likely to be
+  accepted without reading (anchoring, automation bias, L06).
+- **Design decision: validate the JSON in code.** Malformed or incomplete
+  proposals are caught and reported ("Nothing was changed"), never shown as
+  valid (schema guarantees shape, not truth, L09).
+- **Change during build: the suggestion is shown once.** The first version
+  showed the highlighted suggestion and an edit box with the same text, so the
+  person read it twice. The edit box now opens only via "Edit the suggestion"
+  (extraneous load, L05). Checked with screenshots.
+- **Checked:** 27 tests pass; scripted browser run of propose → edit → run,
+  and propose → cancel.
