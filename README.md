@@ -20,6 +20,13 @@ explanation misses the mark.
   highlight a likely button, which the person can use or dismiss; decline
   behaviour when a correction asks for something the source does not contain;
   working indicator; "show what was sent to the model" panel.
+- **Implemented (interface):** step path (paste, get an answer, fix it);
+  "How FixIt works" panel listing what it does, what it can't do, and
+  shortcuts; Copy; keyboard shortcuts (Ctrl+Enter generate, Ctrl+Z undo outside
+  text boxes); "This answer works for me" with a session summary (time to the
+  final answer, fixes by method, undos, suggested fixes used) and a downloadable
+  JSON log of counts and timings (no text is logged or stored); accessibility
+  pass (visible focus, skip link, reduced motion, readable contrast).
 - **Simulated:** three seeded demo failures (too technical, too long, missing
   the key point). An unchanged demo case always starts from its scripted bad
   answer, labelled "Seeded demo failure, not written by the model", in mock and
@@ -34,7 +41,10 @@ explanation misses the mark.
 
 - **Backend:** Python, FastAPI (serves the page and makes model calls, so the
   API key never reaches the browser).
-- **Frontend:** plain HTML, CSS and JavaScript (no build step).
+- **Frontend:** plain HTML, CSS and JavaScript (no build step). Fonts:
+  Atkinson Hyperlegible (interface; designed for low-vision legibility) and
+  Source Serif 4 (reading text), loaded from Google Fonts; system fonts are
+  used when offline.
 - **Model:** Google Gemini via the `google-genai` SDK; model name set in `.env`
   (default `gemini-3.6-flash`).
 - **Tests:** pytest, always in mock mode.
@@ -70,6 +80,21 @@ Run the prompt test cases against the live model (needs your key in `.env`):
 python -m scripts.prompt_tests            # each case once
 python -m scripts.prompt_tests --repeat 3 # repeat to see run-to-run variation
 ```
+
+## Storyboard frames
+
+The storyboard screenshots in the report were captured by driving the running
+app (live model) with a browser script:
+
+```bash
+pip install playwright
+uvicorn app.main:app              # in one terminal
+python -m scripts.capture_storyboards   # in a second terminal
+```
+
+Frames are saved to `docs/storyboards/frames/`; the composed storyboards are in
+`docs/storyboards/`. The script uses the installed Microsoft Edge by default
+(`--browser chrome` for Chrome).
 
 ## Project layout
 

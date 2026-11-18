@@ -4,22 +4,69 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FixIt: recover from a bad AI summary</title>
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233346C8'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11.5' stroke='white' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <!-- Fonts: Atkinson Hyperlegible (interface; designed for low-vision legibility)
+       and Source Serif 4 (reading text). System fonts are used if offline. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+  <a class="skip-link" href="#output-heading">Skip to the answer</a>
+
   <header class="topbar">
-    <div>
-      <h1>FixIt</h1>
-      <p class="tagline">Get a summary you can use, and fix it when it misses the mark.</p>
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M9 16.5l4.5 4.5L23 11.5"/></svg>
+      <div>
+        <h1>FixIt</h1>
+        <p class="tagline">Get a summary you can use, and fix it when it misses the mark.</p>
+      </div>
     </div>
-    <span id="mode-badge" class="badge" title="Which model is answering">Checking…</span>
+    <div class="topbar-right">
+      <details class="how" id="how">
+        <summary>How FixIt works</summary>
+        <div class="how-body">
+          <div>
+            <h2 class="how-title">What it does</h2>
+            <ul>
+              <li>Writes a summary or explanation of the text you paste, using Google Gemini.</li>
+              <li>Checks each answer against your request and suggests a fix. It never applies one without you.</li>
+              <li>Highlights every change, labels who made it, and keeps every version so you can undo.</li>
+            </ul>
+          </div>
+          <div>
+            <h2 class="how-title">What it can't do</h2>
+            <ul>
+              <li>It can't check facts outside your text, and the AI can still make mistakes. Read the answer before you use it.</li>
+              <li>Its checks are rules of thumb: "FixIt noticed" can be wrong, so you decide.</li>
+              <li>It doesn't save anything after you close the page.</li>
+            </ul>
+          </div>
+          <div>
+            <h2 class="how-title">Shortcuts</h2>
+            <ul class="keys">
+              <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> Generate</li>
+              <li><kbd>Ctrl</kbd> + <kbd>Z</kbd> Undo (outside text boxes)</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+      <span id="mode-badge" class="badge" title="Which model is answering">Checking…</span>
+    </div>
   </header>
+
+  <!-- Where the person is in the task: the step path fills in as they go -->
+  <ol class="steps" id="steps" aria-label="Your progress">
+    <li data-step="1" class="current"><span class="dot">1</span><span class="step-text">Paste your reading</span></li>
+    <li data-step="2"><span class="dot">2</span><span class="step-text">Get an answer</span></li>
+    <li data-step="3"><span class="dot">3</span><span class="step-text">Fix it until it works for you</span></li>
+  </ol>
 
   <main class="layout">
     <!-- Input: what the person gives the system -->
     <section class="card" aria-labelledby="input-heading">
-      <h2 id="input-heading">1. Your reading</h2>
+      <h2 id="input-heading">Your reading</h2>
 
       <label for="sample-select" class="label">Try a demo case (optional)</label>
       <select id="sample-select">
@@ -39,16 +86,16 @@
       </fieldset>
 
       <label for="request" class="label">What do you need? (optional)</label>
-      <input id="request" type="text" maxlength="500"
-        placeholder="e.g. About 80 words, for a first-year student">
+      <textarea id="request" rows="2" maxlength="500"
+        placeholder="e.g. About 80 words, for a first-year student"></textarea>
 
-      <button id="generate-btn" class="primary">Generate</button>
+      <button id="generate-btn" class="primary" title="Generate (Ctrl + Enter)">Generate</button>
     </section>
 
     <!-- Output and recovery: what the system gives back, and how to fix it -->
     <div class="column">
       <section class="card" aria-labelledby="output-heading">
-        <h2 id="output-heading">2. AI answer</h2>
+        <h2 id="output-heading">AI answer</h2>
 
         <div id="status" class="status" role="status" aria-live="polite" hidden></div>
 
@@ -68,13 +115,27 @@
               <option value="all">New and removed words</option>
               <option value="none">Nothing</option>
             </select>
-            <button id="undo-btn" class="secondary" title="Go back to the previous version. Nothing is deleted.">Undo</button>
+            <button id="undo-btn" class="secondary" title="Go back to the previous version. Nothing is deleted. (Ctrl + Z)">Undo</button>
+            <button id="copy-btn" class="secondary" title="Copy this version's text">Copy</button>
           </div>
         </div>
 
         <article id="output" class="output" hidden></article>
         <p id="change-report" class="report" hidden></p>
         <p id="output-meta" class="hint" hidden></p>
+
+        <div id="accept-row" class="accept-row" hidden>
+          <button id="accept-btn" class="accept">This answer works for me</button>
+          <span class="hint">Marks this version as your final answer and shows how much fixing it took.</span>
+        </div>
+
+        <section id="summary" class="summary" hidden aria-labelledby="summary-heading" tabindex="-1">
+          <h3 id="summary-heading">Done: <span id="summary-version"></span></h3>
+          <p id="summary-line" class="summary-line"></p>
+          <dl id="summary-stats" class="summary-stats"></dl>
+          <p class="hint">Counted on this page only. Nothing is stored or sent anywhere. The download contains counts and timings, not your text.</p>
+          <button id="log-btn" class="secondary">Download the session log (JSON)</button>
+        </section>
 
         <details id="sent-panel" class="sent" hidden>
           <summary>Show what was sent to the model</summary>
@@ -86,7 +147,7 @@
       </section>
 
       <section id="recovery" class="card" aria-labelledby="recovery-heading" hidden>
-        <h2 id="recovery-heading">3. Not right? Fix it</h2>
+        <h2 id="recovery-heading">Not right? Fix it</h2>
 
         <div id="noticed" class="noticed" hidden aria-live="polite">
           <p class="noticed-title">FixIt noticed (you decide whether to act)</p>

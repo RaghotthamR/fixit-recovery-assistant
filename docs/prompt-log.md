@@ -15,3 +15,4 @@ cases).
 | Date | Prompt version | Model | Result | Report | What it led to |
 |---|---|---|---|---|---|
 | 2026-11-16 | v3 | gemini-3.6-flash | All 11 criteria that ran passed; 2 cases (fix-shorter, decline-unsupported) got no answer because the service returned "503 UNAVAILABLE, high demand". | [report](prompt-tests/2026-11-16_1943_gemini-3.6-flash_v3.md) | Retry on busy errors added to the model client; the runner now reports model errors as "not scored" rather than as failures. |
+| 2026-11-16 | v3 | gemini-3.6-flash | 13 of 13 scored criteria passed; no model errors after adding retry. | [report](prompt-tests/2026-11-16_1957_gemini-3.6-flash_v3.md) | Confirms the v3 prompts meet every code-checkable criterion on the live model. |

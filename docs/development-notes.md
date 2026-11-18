@@ -122,3 +122,60 @@ and how it was checked.
   ("Google's model is busy right now… Nothing was changed; you can try again").
   The test runner records model errors as "not scored", so a busy server is not
   counted as a failed prompt. 2 new tests (49 in total).
+
+## Stage 6: storyboards
+
+- **Built:** `scripts/capture_storyboards.py` drives the running app through the
+  three storyboard scenarios and saves each frame, cropped to the relevant part
+  of the page, so the storyboards show real interactions with the live model and
+  can be recaptured after any change.
+- **Change from drafting the storyboards: the request box is now two lines.**
+  An approved Auto-fix request did not fit in the one-line box, so the person
+  could not see the request their answer was now based on.
+- Frames follow the Lecture 06 method: goal, person's action, system inference
+  and action, result and recovery, each marked with who acts, which gulf, and
+  which signifier.
+
+## Stage 7: interface refinement and session summary
+
+Constraint for this stage: no change to prompts (still v3, so the 13/13 live
+results stay valid) and no change to existing behaviour; all earlier tests
+must still pass.
+
+- **Visual redesign (CSS only).** Concept: a reading desk with an editor's pen.
+  Answers are set in a serif reading face with a margin rule; new words are
+  shown as highlighter strokes; one accent colour (pen blue) marks what to do
+  next, amber is reserved for "FixIt noticed", teal for a finished answer.
+  Interface font Atkinson Hyperlegible was chosen for low-vision legibility.
+  Aim: less extraneous load (L05), a minimalist design (Nielsen).
+- **Step path** (paste, get an answer, fix it) that fills in as the person
+  goes: visibility of system status, and a system image that supports an
+  accurate mental model (L05). The card headings lost their numbers, since the
+  step path now carries the sequence.
+- **"How FixIt works" panel** listing what it does, what it can't do, and
+  shortcuts: make clear what the system can do and how well (Amershi et al.),
+  narrowing the expectation gulf (L03).
+- **Copy button** and **keyboard shortcuts** (Ctrl+Enter generate; Ctrl+Z
+  undo, only outside text boxes so the browser's own text undo still works):
+  efficient invocation (Amershi et al.).
+- **Accessibility pass:** visible keyboard focus everywhere, skip link,
+  `aria-current` on the step path and history, reduced-motion support, text
+  contrast checked against WCAG AA.
+- **"This answer works for me" and session summary.** Marking a final answer
+  shows time to the final answer, fixes by method, Auto-fix runs, undos and
+  suggested fixes used, and offers a JSON log download. These are the
+  measures of the Assignment 1 study (time, success, recovery attempts), so
+  the measurement instrument is now built; running the study with
+  participants remains planned. The log holds counts and timings only, never
+  the person's text, and stays on the page unless downloaded (store less, L10).
+- **Change during build: hidden elements were showing.** The new layout rules
+  overrode the `hidden` attribute, so Undo, Copy and the accept button appeared
+  before any answer existed. Fixed with a global rule; caught in a screenshot.
+- **Change during build: the final-answer button looked disabled.** After
+  marking, the greyed-out button read as an error; it now turns solid teal to
+  confirm success.
+- **Storyboard 2 now ends on the summary** instead of the request box, closing
+  the loop that the goal frame opens.
+- **Checked:** 51 tests pass (2 new page tests); scripted browser walk-through
+  of shortcuts, copy, accept, summary and log download (log contains no text);
+  desktop and phone-width screenshots.
